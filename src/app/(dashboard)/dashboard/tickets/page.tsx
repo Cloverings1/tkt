@@ -1,24 +1,46 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { PageHeader } from "@/components/ui/page-header"
 import { StatusBadge } from "@/components/ui/status-badge"
 import { PriorityBadge } from "@/components/ui/priority-badge"
-import { mockTickets, mockCategories } from "@/lib/mock-data"
 import type { TicketStatus, TicketPriority } from "@/lib/types"
+
+interface TicketRow {
+  id: string
+  ticketNumber: number
+  title: string
+  status: TicketStatus
+  priority: TicketPriority
+  categoryName: string | null
+  categoryColor: string | null
+  assigneeName: string | null
+  createdAt: string
+}
 
 export default function TicketsPage() {
   const [statusFilter, setStatusFilter] = useState<TicketStatus | "all">("all")
   const [priorityFilter, setPriorityFilter] = useState<TicketPriority | "all">("all")
+  const [tickets, setTickets] = useState<TicketRow[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const filtered = mockTickets.filter((t) => {
-    if (statusFilter !== "all" && t.status !== statusFilter) return false
-    if (priorityFilter !== "all" && t.priority !== priorityFilter) return false
-    return true
-  })
+  useEffect(() => {
+    const params = new URLSearchParams()
+    if (statusFilter !== "all") params.set("status", statusFilter)
+    if (priorityFilter !== "all") params.set("priority", priorityFilter)
+
+    setLoading(true)
+    fetch(`/api/tickets?${params.toString()}`)
+      .then((res) => res.json())
+      .then((data) => {
+        setTickets(data)
+        setLoading(false)
+      })
+      .catch(() => setLoading(false))
+  }, [statusFilter, priorityFilter])
 
   return (
     <div className="p-8">
@@ -72,55 +94,68 @@ export default function TicketsPage() {
             </tr>
           </thead>
           <tbody>
-            {filtered.map((ticket) => (
-              <tr
-                key={ticket.id}
-                className="border-b border-border/50 transition-colors last:border-0 hover:bg-card/50"
-              >
-                <td className="px-4 py-3">
-                  <StatusBadge status={ticket.status} />
-                </td>
-                <td className="px-4 py-3 font-mono text-xs text-muted-foreground">
-                  {ticket.ticketNumber}
-                </td>
-                <td className="max-w-xs px-4 py-3">
-                  <Link
-                    href={`/dashboard/tickets/${ticket.id}`}
-                    className="text-sm hover:text-primary hover:underline"
-                  >
-                    {ticket.title}
-                  </Link>
-                </td>
-                <td className="px-4 py-3">
-                  <PriorityBadge priority={ticket.priority} />
-                </td>
-                <td className="px-4 py-3">
-                  {ticket.category && (
-                    <span className="inline-flex items-center gap-1.5 text-xs">
-                      <span
-                        className="h-2 w-2 rounded-full"
-                        style={{ backgroundColor: ticket.category.color }}
-                      />
-                      {ticket.category.name}
-                    </span>
-                  )}
-                </td>
-                <td className="px-4 py-3 text-sm text-muted-foreground">
-                  {ticket.assignee?.name ?? (
-                    <span className="italic text-zinc-600">Unassigned</span>
-                  )}
-                </td>
-                <td className="px-4 py-3 text-xs text-muted-foreground">
-                  {formatTimeAgo(ticket.createdAt)}
-                </td>
-              </tr>
-            ))}
-            {filtered.length === 0 && (
+            {loading ? (
+              Array.from({ length: 5 }).map((_, i) => (
+                <tr key={i} className="border-b border-border/50 last:border-0">
+                  <td className="px-4 py-3"><div className="h-5 w-20 animate-pulse rounded bg-zinc-800" /></td>
+                  <td className="px-4 py-3"><div className="h-4 w-10 animate-pulse rounded bg-zinc-800" /></td>
+                  <td className="px-4 py-3"><div className="h-4 w-48 animate-pulse rounded bg-zinc-800" /></td>
+                  <td className="px-4 py-3"><div className="h-5 w-16 animate-pulse rounded bg-zinc-800" /></td>
+                  <td className="px-4 py-3"><div className="h-4 w-20 animate-pulse rounded bg-zinc-800" /></td>
+                  <td className="px-4 py-3"><div className="h-4 w-24 animate-pulse rounded bg-zinc-800" /></td>
+                  <td className="px-4 py-3"><div className="h-4 w-14 animate-pulse rounded bg-zinc-800" /></td>
+                </tr>
+              ))
+            ) : tickets.length === 0 ? (
               <tr>
                 <td colSpan={7} className="px-4 py-12 text-center text-sm text-muted-foreground">
                   No tickets match your filters.
                 </td>
               </tr>
+            ) : (
+              tickets.map((ticket) => (
+                <tr
+                  key={ticket.id}
+                  className="border-b border-border/50 transition-colors last:border-0 hover:bg-card/50"
+                >
+                  <td className="px-4 py-3">
+                    <StatusBadge status={ticket.status} />
+                  </td>
+                  <td className="px-4 py-3 font-mono text-xs text-muted-foreground">
+                    {ticket.ticketNumber}
+                  </td>
+                  <td className="max-w-xs px-4 py-3">
+                    <Link
+                      href={`/dashboard/tickets/${ticket.id}`}
+                      className="text-sm hover:text-primary hover:underline"
+                    >
+                      {ticket.title}
+                    </Link>
+                  </td>
+                  <td className="px-4 py-3">
+                    <PriorityBadge priority={ticket.priority} />
+                  </td>
+                  <td className="px-4 py-3">
+                    {ticket.categoryName && (
+                      <span className="inline-flex items-center gap-1.5 text-xs">
+                        <span
+                          className="h-2 w-2 rounded-full"
+                          style={{ backgroundColor: ticket.categoryColor ?? undefined }}
+                        />
+                        {ticket.categoryName}
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-muted-foreground">
+                    {ticket.assigneeName ?? (
+                      <span className="italic text-zinc-600">Unassigned</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 text-xs text-muted-foreground">
+                    {formatTimeAgo(new Date(ticket.createdAt))}
+                  </td>
+                </tr>
+              ))
             )}
           </tbody>
         </table>
