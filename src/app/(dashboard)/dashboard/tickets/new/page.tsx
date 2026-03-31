@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { motion } from "motion/react"
 import { AnimatedLayout } from "@/components/ui/animated-layout"
@@ -94,6 +94,11 @@ export default function NewTicketPage() {
   const [priority, setPriority] = useState<TicketPriority>("medium")
   const [selectedCategoryId, setSelectedCategoryId] = useState("")
   const [showSuccess, setShowSuccess] = useState(false)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   useEffect(() => {
     async function fetchCategories() {
@@ -158,7 +163,7 @@ export default function NewTicketPage() {
         onSubmit={handleSubmit}
         className="mt-8 max-w-2xl space-y-6"
         variants={staggerContainer}
-        initial="hidden"
+        initial={mounted ? "hidden" : false}
         animate="show"
       >
         {error && (
