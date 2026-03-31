@@ -3,6 +3,24 @@
 import { useEffect, useState, useCallback } from "react"
 import { PageHeader } from "@/components/ui/page-header"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+  DialogDescription,
+} from "@/components/ui/dialog"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Plus, Loader2 } from "lucide-react"
 import type { OrgRole } from "@/lib/types"
 
@@ -24,6 +42,13 @@ const roleColors: Record<OrgRole, string> = {
 export default function TeamPage() {
   const [members, setMembers] = useState<TeamMember[]>([])
   const [loading, setLoading] = useState(true)
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState("")
+
+  // Form fields
+  const [email, setEmail] = useState("")
+  const [role, setRole] = useState<OrgRole>("agent")
 
   const loadMembers = useCallback(async () => {
     try {
@@ -42,13 +67,106 @@ export default function TeamPage() {
     loadMembers()
   }, [loadMembers])
 
+  function resetForm() {
+    setEmail("")
+    setRole("agent")
+    setError("")
+  }
+
+  async function handleInvite(e: React.FormEvent) {
+    e.preventDefault()
+    setError("")
+
+    if (!email.trim()) {
+      setError("Email is required")
+      return
+    }
+
+    setSubmitting(true)
+    try {
+      const res = await fetch("/api/team", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim(), role }),
+      })
+
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || "Failed to invite member")
+      }
+
+      setDialogOpen(false)
+      resetForm()
+      await loadMembers()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong")
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
   return (
     <div className="p-8">
       <PageHeader title="Team" description="Manage team members and roles">
-        <Button>
-          <Plus className="mr-2 h-4 w-4" />
-          Invite Member
-        </Button>
+        <Dialog
+          open={dialogOpen}
+          onOpenChange={(open) => {
+            setDialogOpen(open)
+            if (!open) resetForm()
+          }}
+        >
+          <DialogTrigger
+            render={
+              <Button>
+                <Plus className="mr-2 h-4 w-4" />
+                Invite Member
+              </Button>
+            }
+          />
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Invite Team Member</DialogTitle>
+              <DialogDescription>
+                Send an invitation to join your organization.
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleInvite} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="invite-email">Email</Label>
+                <Input
+                  id="invite-email"
+                  type="email"
+                  placeholder="colleague@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  autoFocus
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Role</Label>
+                <Select value={role} onValueChange={(val) => setRole(val as OrgRole)}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="admin">Admin</SelectItem>
+                    <SelectItem value="agent">Agent</SelectItem>
+                    <SelectItem value="customer">Customer</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {error && (
+                <p className="text-sm text-destructive">{error}</p>
+              )}
+              <DialogFooter>
+                <Button type="submit" disabled={submitting}>
+                  {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Send Invite
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
       </PageHeader>
 
       {loading ? (
