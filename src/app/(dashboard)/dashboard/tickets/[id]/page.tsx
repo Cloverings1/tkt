@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useParams } from "next/navigation"
+import { AnimatedLayout } from "@/components/ui/animated-layout"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { StatusBadge } from "@/components/ui/status-badge"
@@ -195,7 +196,7 @@ export default function TicketDetailPage() {
   }
 
   return (
-    <div className="flex h-full flex-col">
+    <AnimatedLayout className="flex h-full flex-col">
       {/* Header */}
       <div className="flex items-center gap-4 border-b border-border px-8 py-4">
         <Link
@@ -377,7 +378,7 @@ export default function TicketDetailPage() {
           </div>
         </div>
       </div>
-    </div>
+    </AnimatedLayout>
   )
 }
 

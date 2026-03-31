@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState, useCallback } from "react"
+import { AnimatedLayout } from "@/components/ui/animated-layout"
 import { PageHeader } from "@/components/ui/page-header"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -96,6 +97,7 @@ export default function SettingsPage() {
   }
 
   return (
+    <AnimatedLayout>
     <div className="p-8">
       <PageHeader title="Settings" description="Manage your organization" />
 
@@ -149,5 +151,6 @@ export default function SettingsPage() {
         </div>
       </div>
     </div>
+    </AnimatedLayout>
   )
 }

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Plus } from "lucide-react"
+import { AnimatedLayout } from "@/components/ui/animated-layout"
 import { Button } from "@/components/ui/button"
 import { PageHeader } from "@/components/ui/page-header"
 import { StatusBadge } from "@/components/ui/status-badge"
@@ -43,6 +44,7 @@ export default function TicketsPage() {
   }, [statusFilter, priorityFilter])
 
   return (
+    <AnimatedLayout>
     <div className="p-8">
       <PageHeader title="Tickets" description="Manage and track support tickets">
         <Link href="/dashboard/tickets/new">
@@ -161,6 +163,7 @@ export default function TicketsPage() {
         </table>
       </div>
     </div>
+    </AnimatedLayout>
   )
 }
 

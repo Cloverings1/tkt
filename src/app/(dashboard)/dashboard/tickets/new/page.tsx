@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import { AnimatedLayout } from "@/components/ui/animated-layout"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -73,6 +74,7 @@ export default function NewTicketPage() {
   }
 
   return (
+    <AnimatedLayout>
     <div className="p-8">
       <PageHeader title="New Ticket" description="Create a new support ticket" />
 
@@ -150,5 +152,6 @@ export default function NewTicketPage() {
         </div>
       </form>
     </div>
+    </AnimatedLayout>
   )
 }

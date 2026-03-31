@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState, useCallback } from "react"
+import { AnimatedLayout } from "@/components/ui/animated-layout"
 import { PageHeader } from "@/components/ui/page-header"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -95,6 +96,7 @@ export default function CategoriesPage() {
   }
 
   return (
+    <AnimatedLayout>
     <div className="p-8">
       <PageHeader title="Categories" description="Organize tickets by category">
         <Dialog
@@ -204,5 +206,6 @@ export default function CategoriesPage() {
         </div>
       )}
     </div>
+    </AnimatedLayout>
   )
 }
