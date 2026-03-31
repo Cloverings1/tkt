@@ -15,7 +15,7 @@ import {
   DialogFooter,
   DialogDescription,
 } from "@/components/ui/dialog"
-import { motion } from "motion/react"
+import { motion, AnimatePresence } from "motion/react"
 import {
   Plus,
   Loader2,
@@ -29,11 +29,31 @@ import {
   Wrench,
   Cloud,
   Wifi,
+  Monitor,
+  Server,
+  Shield,
+  Mail,
+  HardDrive,
+  User,
+  HelpCircle,
+  Settings,
   Tag,
   Ticket,
+  ChevronDown,
+  Layers,
 } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
-import type { Category } from "@/lib/types"
+
+interface CategoryWithChildren {
+  id: string
+  name: string
+  color: string
+  icon: string | null
+  parentId: string | null
+  orgId: string
+  createdAt: string
+  children: CategoryWithChildren[]
+}
 
 const iconMap: Record<string, LucideIcon> = {
   smartphone: Smartphone,
@@ -46,6 +66,15 @@ const iconMap: Record<string, LucideIcon> = {
   wrench: Wrench,
   cloud: Cloud,
   wifi: Wifi,
+  monitor: Monitor,
+  server: Server,
+  shield: Shield,
+  mail: Mail,
+  "hard-drive": HardDrive,
+  user: User,
+  "help-circle": HelpCircle,
+  settings: Settings,
+  apple: Laptop,
   tag: Tag,
 }
 
@@ -55,11 +84,15 @@ function getCategoryIcon(iconName: string | null): LucideIcon {
 }
 
 export default function CategoriesPage() {
-  const [categories, setCategories] = useState<Category[]>([])
+  const [categories, setCategories] = useState<CategoryWithChildren[]>([])
   const [loading, setLoading] = useState(true)
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set())
+
+  // Dialog state
   const [dialogOpen, setDialogOpen] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState("")
+  const [dialogParentId, setDialogParentId] = useState<string | null>(null)
 
   // Form fields
   const [name, setName] = useState("")
@@ -72,6 +105,9 @@ export default function CategoriesPage() {
       if (!res.ok) throw new Error("Failed to load categories")
       const data = await res.json()
       setCategories(data)
+      // Expand all sections by default
+      const ids = data.map((c: CategoryWithChildren) => c.id)
+      setExpandedSections(new Set(ids))
     } catch (err) {
       console.error("Failed to load categories:", err)
     } finally {
@@ -83,11 +119,29 @@ export default function CategoriesPage() {
     loadCategories()
   }, [loadCategories])
 
+  function toggleSection(id: string) {
+    setExpandedSections((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) {
+        next.delete(id)
+      } else {
+        next.add(id)
+      }
+      return next
+    })
+  }
+
   function resetForm() {
     setName("")
     setColor("#8b5cf6")
     setIcon("")
     setError("")
+    setDialogParentId(null)
+  }
+
+  function openAddDialog(parentId: string | null) {
+    setDialogParentId(parentId)
+    setDialogOpen(true)
   }
 
   async function handleCreate(e: React.FormEvent) {
@@ -113,6 +167,7 @@ export default function CategoriesPage() {
           name: name.trim(),
           color,
           ...(icon.trim() ? { icon: icon.trim() } : {}),
+          ...(dialogParentId ? { parentId: dialogParentId } : {}),
         }),
       })
 
@@ -131,10 +186,21 @@ export default function CategoriesPage() {
     }
   }
 
+  const dialogTitle = dialogParentId
+    ? `Add Category to ${categories.find((c) => c.id === dialogParentId)?.name ?? "Platform"}`
+    : "Add Platform"
+
   return (
     <AnimatedLayout>
-    <div className="p-8">
-      <PageHeader title="Categories" description="Organize tickets by category">
+      <div className="p-8">
+        <PageHeader title="Categories" description="Organize tickets by platform and category">
+          <Button onClick={() => openAddDialog(null)}>
+            <Layers className="mr-2 h-4 w-4" />
+            Add Platform
+          </Button>
+        </PageHeader>
+
+        {/* Create dialog */}
         <Dialog
           open={dialogOpen}
           onOpenChange={(open) => {
@@ -142,19 +208,13 @@ export default function CategoriesPage() {
             if (!open) resetForm()
           }}
         >
-          <DialogTrigger
-            render={
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                Add Category
-              </Button>
-            }
-          />
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Create Category</DialogTitle>
+              <DialogTitle>{dialogTitle}</DialogTitle>
               <DialogDescription>
-                Add a new category to organize your tickets.
+                {dialogParentId
+                  ? "Add a sub-category under this platform."
+                  : "Create a new top-level platform group."}
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleCreate} className="space-y-4">
@@ -162,7 +222,7 @@ export default function CategoriesPage() {
                 <Label htmlFor="cat-name">Name</Label>
                 <Input
                   id="cat-name"
-                  placeholder="e.g. Bug Report"
+                  placeholder={dialogParentId ? "e.g. iPhone / iOS" : "e.g. Apple"}
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   autoFocus
@@ -190,7 +250,7 @@ export default function CategoriesPage() {
                 <Label htmlFor="cat-icon">Icon (optional)</Label>
                 <Input
                   id="cat-icon"
-                  placeholder="e.g. bug, server, network"
+                  placeholder="e.g. smartphone, monitor, settings"
                   value={icon}
                   onChange={(e) => setIcon(e.target.value)}
                 />
@@ -201,81 +261,159 @@ export default function CategoriesPage() {
               <DialogFooter>
                 <Button type="submit" disabled={submitting}>
                   {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Create Category
+                  {dialogParentId ? "Add Category" : "Add Platform"}
                 </Button>
               </DialogFooter>
             </form>
           </DialogContent>
         </Dialog>
-      </PageHeader>
 
-      {loading ? (
-        <div className="mt-8 flex items-center justify-center py-12">
-          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-        </div>
-      ) : categories.length === 0 ? (
-        <div className="mt-8 flex flex-col items-center justify-center py-12 text-muted-foreground">
-          <p className="text-sm">No categories yet. Create one to get started.</p>
-        </div>
-      ) : (
-        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {categories.map((category, index) => {
-            const Icon = getCategoryIcon(category.icon)
-            return (
-              <motion.div
-                key={category.id}
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: index * 0.04 }}
-                whileHover={{ y: -4, transition: { duration: 0.2 } }}
-                className="group relative overflow-hidden rounded-xl border border-border bg-card transition-shadow duration-200 hover:shadow-lg hover:shadow-black/20"
-              >
-                {/* Colored left accent stripe */}
-                <div
-                  className="absolute left-0 top-0 bottom-0 w-1 transition-all duration-200 group-hover:w-1.5"
-                  style={{ backgroundColor: category.color }}
-                />
+        {loading ? (
+          <div className="mt-8 flex items-center justify-center py-12">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          </div>
+        ) : categories.length === 0 ? (
+          <div className="mt-8 flex flex-col items-center justify-center py-12 text-muted-foreground">
+            <Layers className="mb-3 h-8 w-8 opacity-40" />
+            <p className="text-sm">No platforms yet. Add one to get started.</p>
+          </div>
+        ) : (
+          <div className="mt-8 space-y-4">
+            {categories.map((platform, platformIndex) => {
+              const PlatformIcon = getCategoryIcon(platform.icon)
+              const isExpanded = expandedSections.has(platform.id)
 
-                <div className="p-6 pl-5 ml-1">
-                  {/* Icon and name */}
-                  <div className="flex items-start gap-4">
+              return (
+                <motion.div
+                  key={platform.id}
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.35, delay: platformIndex * 0.06 }}
+                  className="overflow-hidden rounded-xl border border-border bg-card"
+                >
+                  {/* Platform section header */}
+                  <button
+                    onClick={() => toggleSection(platform.id)}
+                    className="flex w-full items-center gap-4 px-5 py-4 text-left transition-colors hover:bg-accent/30"
+                  >
+                    {/* Color accent bar */}
                     <div
-                      className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl transition-transform duration-200 group-hover:scale-110"
-                      style={{ backgroundColor: `${category.color}18` }}
+                      className="h-10 w-1 shrink-0 rounded-full"
+                      style={{ backgroundColor: platform.color }}
+                    />
+
+                    <div
+                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg"
+                      style={{ backgroundColor: `${platform.color}18` }}
                     >
-                      <Icon
-                        className="h-6 w-6"
-                        style={{ color: category.color }}
+                      <PlatformIcon
+                        className="h-5 w-5"
+                        style={{ color: platform.color }}
                       />
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-sm font-semibold leading-tight text-foreground">
-                        {category.name}
-                      </h3>
-                      <div className="mt-1 flex items-center gap-2">
-                        <div
-                          className="h-2.5 w-2.5 rounded-full"
-                          style={{ backgroundColor: category.color }}
-                        />
-                        <span className="text-xs font-mono text-muted-foreground">
-                          {category.color}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
 
-                  {/* Ticket count badge */}
-                  <div className="mt-4 flex items-center gap-1.5 text-muted-foreground">
-                    <Ticket className="h-3.5 w-3.5" />
-                    <span className="text-xs font-medium">0 tickets</span>
-                  </div>
-                </div>
-              </motion.div>
-            )
-          })}
-        </div>
-      )}
-    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-sm font-semibold text-foreground">
+                        {platform.name}
+                      </h3>
+                      <p className="text-xs text-muted-foreground">
+                        {platform.children.length} {platform.children.length === 1 ? "category" : "categories"}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <div
+                        className="h-2.5 w-2.5 rounded-full"
+                        style={{ backgroundColor: platform.color }}
+                      />
+                      <span className="text-xs font-mono text-muted-foreground">
+                        {platform.color}
+                      </span>
+                    </div>
+
+                    <motion.div
+                      animate={{ rotate: isExpanded ? 180 : 0 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                    </motion.div>
+                  </button>
+
+                  {/* Collapsible children */}
+                  <AnimatePresence initial={false}>
+                    {isExpanded && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.25, ease: "easeInOut" }}
+                        className="overflow-hidden"
+                      >
+                        <div className="border-t border-border px-5 pb-4 pt-4">
+                          {platform.children.length === 0 ? (
+                            <p className="py-4 text-center text-xs text-muted-foreground">
+                              No categories in this platform yet.
+                            </p>
+                          ) : (
+                            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                              {platform.children.map((child, childIndex) => {
+                                const ChildIcon = getCategoryIcon(child.icon)
+                                return (
+                                  <motion.div
+                                    key={child.id}
+                                    initial={{ opacity: 0, y: 8 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ duration: 0.25, delay: childIndex * 0.03 }}
+                                    whileHover={{ y: -2, transition: { duration: 0.15 } }}
+                                    className="group relative flex items-center gap-3 rounded-lg border border-border bg-zinc-900/50 p-3 transition-shadow duration-200 hover:shadow-md hover:shadow-black/20"
+                                  >
+                                    <div
+                                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-transform duration-200 group-hover:scale-110"
+                                      style={{ backgroundColor: `${child.color}15` }}
+                                    >
+                                      <ChildIcon
+                                        className="h-4 w-4"
+                                        style={{ color: child.color }}
+                                      />
+                                    </div>
+                                    <div className="min-w-0 flex-1">
+                                      <p className="truncate text-sm font-medium text-foreground">
+                                        {child.name}
+                                      </p>
+                                      <div className="mt-0.5 flex items-center gap-1.5">
+                                        <div
+                                          className="h-2 w-2 rounded-full"
+                                          style={{ backgroundColor: child.color }}
+                                        />
+                                        <span className="text-[10px] font-mono text-muted-foreground">
+                                          {child.color}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  </motion.div>
+                                )
+                              })}
+                            </div>
+                          )}
+
+                          {/* Add child category button */}
+                          <button
+                            onClick={() => openAddDialog(platform.id)}
+                            className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-border py-2.5 text-xs font-medium text-muted-foreground transition-colors hover:border-violet-500/40 hover:text-violet-400"
+                          >
+                            <Plus className="h-3.5 w-3.5" />
+                            Add Category
+                          </button>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </motion.div>
+              )
+            })}
+          </div>
+        )}
+      </div>
     </AnimatedLayout>
   )
 }
