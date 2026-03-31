@@ -18,13 +18,9 @@ import {
   AlertOctagon,
   Check,
 } from "lucide-react"
+import { CategoryPicker } from "@/components/ui/category-picker"
+import type { CategoryWithChildren } from "@/components/ui/category-picker"
 import type { TicketPriority } from "@/lib/types"
-
-interface CategoryOption {
-  id: string
-  name: string
-  color: string
-}
 
 const PRIORITY_CARDS: {
   value: TicketPriority
@@ -75,34 +71,6 @@ const PRIORITY_CARDS: {
   },
 ]
 
-const COLOR_DOT_MAP: Record<string, string> = {
-  red: "bg-red-400",
-  blue: "bg-blue-400",
-  green: "bg-emerald-400",
-  yellow: "bg-yellow-400",
-  orange: "bg-orange-400",
-  purple: "bg-purple-400",
-  pink: "bg-pink-400",
-  indigo: "bg-indigo-400",
-  teal: "bg-teal-400",
-  cyan: "bg-cyan-400",
-  amber: "bg-amber-400",
-  emerald: "bg-emerald-400",
-  violet: "bg-violet-400",
-  rose: "bg-rose-400",
-  lime: "bg-lime-400",
-  zinc: "bg-zinc-400",
-  slate: "bg-slate-400",
-}
-
-function getCategoryDotColor(color: string): string {
-  const lower = color.toLowerCase()
-  for (const [key, cls] of Object.entries(COLOR_DOT_MAP)) {
-    if (lower.includes(key)) return cls
-  }
-  return "bg-violet-400"
-}
-
 const staggerContainer = {
   hidden: { opacity: 0 },
   show: {
@@ -122,8 +90,9 @@ export default function NewTicketPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [categories, setCategories] = useState<CategoryOption[]>([])
+  const [categories, setCategories] = useState<CategoryWithChildren[]>([])
   const [priority, setPriority] = useState<TicketPriority>("medium")
+  const [selectedCategoryId, setSelectedCategoryId] = useState("")
   const [showSuccess, setShowSuccess] = useState(false)
 
   useEffect(() => {
@@ -148,7 +117,6 @@ export default function NewTicketPage() {
     const formData = new FormData(e.currentTarget)
     const title = formData.get("title") as string
     const description = formData.get("description") as string
-    const categoryId = formData.get("category") as string
 
     try {
       const res = await fetch("/api/tickets", {
@@ -158,7 +126,7 @@ export default function NewTicketPage() {
           title,
           description,
           priority,
-          categoryId: categoryId || undefined,
+          categoryId: selectedCategoryId || undefined,
         }),
       })
 
@@ -275,33 +243,15 @@ export default function NewTicketPage() {
         </motion.div>
 
         <motion.div className="space-y-2" variants={staggerItem}>
-          <Label htmlFor="category">Category</Label>
-          <div className="relative">
-            <select
-              id="category"
-              name="category"
-              className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm transition-shadow duration-200 focus-visible:ring-3 focus-visible:ring-violet-500/40 focus-visible:border-violet-500/60 focus-visible:shadow-[0_0_12px_rgba(139,92,246,0.15)] outline-none"
-            >
-              <option value="">Select a category</option>
-              {categories.map((cat) => (
-                <option key={cat.id} value={cat.id}>{cat.name}</option>
-              ))}
-            </select>
-          </div>
-          {categories.length > 0 && (
-            <div className="flex flex-wrap gap-2 pt-1">
-              {categories.map((cat) => (
-                <span
-                  key={cat.id}
-                  className="inline-flex items-center gap-1.5 text-xs text-muted-foreground"
-                >
-                  <span
-                    className={`inline-block h-2 w-2 rounded-full ${getCategoryDotColor(cat.color)}`}
-                  />
-                  {cat.name}
-                </span>
-              ))}
-            </div>
+          <Label>Category</Label>
+          {categories.length > 0 ? (
+            <CategoryPicker
+              categories={categories}
+              value={selectedCategoryId}
+              onChange={setSelectedCategoryId}
+            />
+          ) : (
+            <p className="text-xs text-muted-foreground">No categories available.</p>
           )}
         </motion.div>
 
