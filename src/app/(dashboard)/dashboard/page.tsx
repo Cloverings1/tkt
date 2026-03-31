@@ -9,6 +9,8 @@ import { getSession } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { tickets, categories, users } from "@/lib/db/schema"
 import { eq, and, count, desc } from "drizzle-orm"
+import { Inbox } from "lucide-react"
+import { WelcomeBanner } from "@/components/dashboard/welcome-banner"
 
 export default async function DashboardPage() {
   const session = await getSession()
@@ -60,12 +62,18 @@ export default async function DashboardPage() {
           description="Overview of your support operations"
         />
 
+        {stats.total === 0 && (
+          <div className="mt-8">
+            <WelcomeBanner />
+          </div>
+        )}
+
         {/* Stats */}
         <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <StatCard label="Total Tickets" value={stats.total} />
-          <StatCard label="Open" value={stats.open} className="text-blue-400" />
-          <StatCard label="In Progress" value={stats.inProgress} className="text-amber-400" />
-          <StatCard label="Resolved (this week)" value={stats.resolved} className="text-emerald-400" />
+          <StatCard label="Total Tickets" value={stats.total} accentColor="zinc" />
+          <StatCard label="Open" value={stats.open} className="text-blue-400" accentColor="blue" />
+          <StatCard label="In Progress" value={stats.inProgress} className="text-amber-400" accentColor="amber" />
+          <StatCard label="Resolved (this week)" value={stats.resolved} className="text-emerald-400" accentColor="emerald" />
         </div>
 
         {/* Recent tickets */}
@@ -85,23 +93,37 @@ export default async function DashboardPage() {
               <Link
                 key={ticket.id}
                 href={`/dashboard/tickets/${ticket.id}`}
-                className="flex items-center gap-4 rounded-lg border border-border bg-card p-4 transition-colors hover:bg-card/80"
+                className="group flex items-center gap-4 rounded-lg border border-border bg-card p-4 transition-all duration-200 hover:-translate-y-0.5 hover:bg-card/80 hover:shadow-lg hover:shadow-violet-500/5 hover:border-violet-500/20"
               >
-                <StatusBadge status={ticket.status} />
+                <div className="relative flex items-center">
+                  <StatusBadge status={ticket.status} />
+                  {ticket.status === "open" && (
+                    <span className="absolute -right-0.5 -top-0.5 flex h-2.5 w-2.5">
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-blue-400 opacity-75" />
+                      <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-blue-500" />
+                    </span>
+                  )}
+                </div>
                 <span className="font-mono text-xs text-muted-foreground">
                   #{ticket.ticketNumber}
                 </span>
-                <span className="flex-1 truncate text-sm">{ticket.title}</span>
+                <span className="flex-1 truncate text-sm transition-colors duration-150 group-hover:text-foreground">{ticket.title}</span>
                 <PriorityBadge priority={ticket.priority} />
-                <span className="text-xs text-muted-foreground">
+                <span className="font-mono text-xs text-muted-foreground tabular-nums">
                   {formatTimeAgo(ticket.createdAt)}
                 </span>
               </Link>
             ))}
             {recentTickets.length === 0 && (
-              <p className="py-8 text-center text-sm text-muted-foreground">
-                No tickets yet. Create your first ticket to get started.
-              </p>
+              <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border py-16">
+                <Inbox className="h-10 w-10 text-zinc-600" />
+                <p className="mt-4 text-sm font-medium text-muted-foreground">
+                  No tickets yet
+                </p>
+                <p className="mt-1 text-xs text-zinc-500">
+                  Your team is on top of things!
+                </p>
+              </div>
             )}
           </div>
         </div>

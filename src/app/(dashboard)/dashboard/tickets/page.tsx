@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Plus } from "lucide-react"
+import { motion, AnimatePresence } from "motion/react"
 import { AnimatedLayout } from "@/components/ui/animated-layout"
 import { Button } from "@/components/ui/button"
 import { PageHeader } from "@/components/ui/page-header"
@@ -46,9 +47,21 @@ export default function TicketsPage() {
   return (
     <AnimatedLayout>
     <div className="p-8">
-      <PageHeader title="Tickets" description="Manage and track support tickets">
+      <PageHeader
+        title={
+          <span className="flex items-center gap-2.5">
+            Tickets
+            {!loading && tickets.length > 0 && (
+              <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-violet-500/15 px-2 text-xs font-semibold text-violet-400">
+                {tickets.length}
+              </span>
+            )}
+          </span>
+        }
+        description="Manage and track support tickets"
+      >
         <Link href="/dashboard/tickets/new">
-          <Button>
+          <Button className="relative shadow-[0_0_15px_rgba(139,92,246,0.3)] hover:shadow-[0_0_25px_rgba(139,92,246,0.5)] transition-shadow duration-300">
             <Plus className="mr-2 h-4 w-4" />
             New Ticket
           </Button>
@@ -60,7 +73,7 @@ export default function TicketsPage() {
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value as TicketStatus | "all")}
-          className="rounded-md border border-border bg-card px-3 py-1.5 text-sm text-foreground"
+          className="rounded-full border border-border bg-zinc-900 px-4 py-1.5 text-sm text-foreground transition-colors duration-150 hover:border-violet-500/40 hover:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-violet-500/20"
         >
           <option value="all">All Statuses</option>
           <option value="open">Open</option>
@@ -71,7 +84,7 @@ export default function TicketsPage() {
         <select
           value={priorityFilter}
           onChange={(e) => setPriorityFilter(e.target.value as TicketPriority | "all")}
-          className="rounded-md border border-border bg-card px-3 py-1.5 text-sm text-foreground"
+          className="rounded-full border border-border bg-zinc-900 px-4 py-1.5 text-sm text-foreground transition-colors duration-150 hover:border-violet-500/40 hover:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-violet-500/20"
         >
           <option value="all">All Priorities</option>
           <option value="low">Low</option>
@@ -99,13 +112,13 @@ export default function TicketsPage() {
             {loading ? (
               Array.from({ length: 5 }).map((_, i) => (
                 <tr key={i} className="border-b border-border/50 last:border-0">
-                  <td className="px-4 py-3"><div className="h-5 w-20 animate-pulse rounded bg-zinc-800" /></td>
-                  <td className="px-4 py-3"><div className="h-4 w-10 animate-pulse rounded bg-zinc-800" /></td>
-                  <td className="px-4 py-3"><div className="h-4 w-48 animate-pulse rounded bg-zinc-800" /></td>
-                  <td className="px-4 py-3"><div className="h-5 w-16 animate-pulse rounded bg-zinc-800" /></td>
-                  <td className="px-4 py-3"><div className="h-4 w-20 animate-pulse rounded bg-zinc-800" /></td>
-                  <td className="px-4 py-3"><div className="h-4 w-24 animate-pulse rounded bg-zinc-800" /></td>
-                  <td className="px-4 py-3"><div className="h-4 w-14 animate-pulse rounded bg-zinc-800" /></td>
+                  <td className="px-4 py-3"><div className="h-5 w-20 rounded bg-gradient-to-r from-zinc-800 via-zinc-700 to-zinc-800 bg-[length:200%_100%] animate-shimmer" /></td>
+                  <td className="px-4 py-3"><div className="h-4 w-10 rounded bg-gradient-to-r from-zinc-800 via-zinc-700 to-zinc-800 bg-[length:200%_100%] animate-shimmer" /></td>
+                  <td className="px-4 py-3"><div className="h-4 w-48 rounded bg-gradient-to-r from-zinc-800 via-zinc-700 to-zinc-800 bg-[length:200%_100%] animate-shimmer" /></td>
+                  <td className="px-4 py-3"><div className="h-5 w-16 rounded bg-gradient-to-r from-zinc-800 via-zinc-700 to-zinc-800 bg-[length:200%_100%] animate-shimmer" /></td>
+                  <td className="px-4 py-3"><div className="h-4 w-20 rounded bg-gradient-to-r from-zinc-800 via-zinc-700 to-zinc-800 bg-[length:200%_100%] animate-shimmer" /></td>
+                  <td className="px-4 py-3"><div className="h-4 w-24 rounded bg-gradient-to-r from-zinc-800 via-zinc-700 to-zinc-800 bg-[length:200%_100%] animate-shimmer" /></td>
+                  <td className="px-4 py-3"><div className="h-4 w-14 rounded bg-gradient-to-r from-zinc-800 via-zinc-700 to-zinc-800 bg-[length:200%_100%] animate-shimmer" /></td>
                 </tr>
               ))
             ) : tickets.length === 0 ? (
@@ -115,10 +128,13 @@ export default function TicketsPage() {
                 </td>
               </tr>
             ) : (
-              tickets.map((ticket) => (
-                <tr
+              tickets.map((ticket, index) => (
+                <motion.tr
                   key={ticket.id}
-                  className="border-b border-border/50 transition-colors last:border-0 hover:bg-card/50"
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.25, delay: index * 0.04, ease: "easeOut" }}
+                  className="border-b border-border/50 transition-colors duration-150 last:border-0 hover:bg-violet-500/[0.03]"
                 >
                   <td className="px-4 py-3">
                     <StatusBadge status={ticket.status} />
@@ -129,7 +145,7 @@ export default function TicketsPage() {
                   <td className="max-w-xs px-4 py-3">
                     <Link
                       href={`/dashboard/tickets/${ticket.id}`}
-                      className="text-sm hover:text-primary hover:underline"
+                      className="text-sm transition-colors duration-150 hover:text-primary hover:underline"
                     >
                       {ticket.title}
                     </Link>
@@ -153,10 +169,10 @@ export default function TicketsPage() {
                       <span className="italic text-zinc-600">Unassigned</span>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground">
+                  <td className="px-4 py-3 font-mono text-xs text-muted-foreground tabular-nums">
                     {formatTimeAgo(new Date(ticket.createdAt))}
                   </td>
-                </tr>
+                </motion.tr>
               ))
             )}
           </tbody>

@@ -134,6 +134,12 @@
 @theme inline {
   --animate-orb-slow: orb-slow 20s ease-in-out infinite;
   --animate-orb-slow-reverse: orb-slow-reverse 25s ease-in-out infinite;
+  --animate-shimmer: shimmer 1.5s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
 }
 
 @keyframes orb-slow {

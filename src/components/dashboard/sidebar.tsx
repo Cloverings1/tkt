@@ -46,6 +46,7 @@ function NavLinks({
           item.href === "/dashboard"
             ? pathname === "/dashboard"
             : pathname.startsWith(item.href)
+        const isTickets = item.href === "/dashboard/tickets"
 
         return (
           <Link
@@ -53,16 +54,39 @@ function NavLinks({
             href={item.href}
             onClick={onNavigate}
             className={cn(
-              "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150",
+              "group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
               isActive
-                ? "bg-accent text-accent-foreground"
+                ? "bg-gradient-to-r from-violet-500/15 via-violet-500/8 to-transparent text-accent-foreground"
                 : "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
               collapsed && "justify-center px-0"
             )}
             title={collapsed ? item.label : undefined}
           >
-            <item.icon className="h-4.5 w-4.5 shrink-0" />
-            {!collapsed && <span>{item.label}</span>}
+            {isActive && (
+              <span className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-violet-500" />
+            )}
+            <item.icon className={cn(
+              "h-4.5 w-4.5 shrink-0 transition-transform duration-200",
+              "group-hover:scale-110",
+              isActive && "text-violet-400"
+            )} />
+            {!collapsed && (
+              <span className="relative">
+                {item.label}
+                {isTickets && (
+                  <span className="absolute -right-3 -top-0.5 flex h-2 w-2">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
+                    <span className="relative inline-flex h-2 w-2 rounded-full bg-red-500" />
+                  </span>
+                )}
+              </span>
+            )}
+            {collapsed && isTickets && (
+              <span className="absolute right-1.5 top-1.5 flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-red-500" />
+              </span>
+            )}
           </Link>
         )
       })}
@@ -99,7 +123,7 @@ export function Sidebar() {
             {/* Mobile sidebar content */}
             <div className="flex h-full flex-col">
               <div className="flex h-16 items-center gap-2.5 border-b border-border px-4">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary shadow-[0_0_12px_rgba(139,92,246,0.4)]">
                   <Ticket className="h-4 w-4 text-primary-foreground" />
                 </div>
                 <span className="text-sm font-bold tracking-tight">TKT</span>
@@ -119,7 +143,7 @@ export function Sidebar() {
                     setSheetOpen(false)
                     handleLogout()
                   }}
-                  className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition-all duration-150 hover:bg-accent/50 hover:text-foreground"
+                  className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition-all duration-200 hover:bg-red-500/10 hover:text-red-400"
                 >
                   <LogOut className="h-4.5 w-4.5 shrink-0" />
                   <span>Sign out</span>
@@ -166,7 +190,7 @@ export function Sidebar() {
           <button
             onClick={handleLogout}
             className={cn(
-              "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition-all duration-150 hover:bg-accent/50 hover:text-foreground",
+              "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition-all duration-200 hover:bg-red-500/10 hover:text-red-400",
               collapsed && "justify-center px-0"
             )}
             title={collapsed ? "Sign out" : undefined}
