@@ -1,7 +1,8 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useParams } from "next/navigation"
+import { motion, AnimatePresence } from "motion/react"
 import { AnimatedLayout } from "@/components/ui/animated-layout"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
@@ -58,6 +59,7 @@ interface TeamMember {
 export default function TicketDetailPage() {
   const params = useParams()
   const ticketId = params.id as string
+  const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const [ticket, setTicket] = useState<TicketDetail | null>(null)
   const [messages, setMessages] = useState<TicketMessage[]>([])
@@ -74,6 +76,10 @@ export default function TicketDetailPage() {
   const [priority, setPriority] = useState<TicketPriority>("medium")
   const [categoryId, setCategoryId] = useState<string>("")
   const [assignedTo, setAssignedTo] = useState<string>("")
+
+  // Flash states for sidebar changes
+  const [statusFlash, setStatusFlash] = useState(false)
+  const [priorityFlash, setPriorityFlash] = useState(false)
 
   useEffect(() => {
     async function fetchData() {
@@ -132,11 +138,15 @@ export default function TicketDetailPage() {
   function handleStatusChange(val: TicketStatus) {
     setStatus(val)
     handlePatch("status", val)
+    setStatusFlash(true)
+    setTimeout(() => setStatusFlash(false), 600)
   }
 
   function handlePriorityChange(val: TicketPriority) {
     setPriority(val)
     handlePatch("priority", val)
+    setPriorityFlash(true)
+    setTimeout(() => setPriorityFlash(false), 600)
   }
 
   function handleCategoryChange(val: string) {
@@ -166,6 +176,8 @@ export default function TicketDetailPage() {
       const msg: TicketMessage = await res.json()
       setMessages((prev) => [...prev, msg])
       setNewMessage("")
+      // Scroll to bottom after message is added
+      setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100)
     } catch {
       console.error("Failed to send message")
     } finally {
@@ -195,6 +207,8 @@ export default function TicketDetailPage() {
     )
   }
 
+  const hasContent = newMessage.trim().length > 0
+
   return (
     <AnimatedLayout className="flex h-full flex-col">
       {/* Header */}
@@ -219,7 +233,12 @@ export default function TicketDetailPage() {
         <div className="flex flex-1 flex-col border-r border-border">
           <div className="flex-1 space-y-4 overflow-y-auto p-8">
             {/* Original description */}
-            <div className="rounded-lg border border-border bg-card p-4">
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+              className="rounded-lg border border-border bg-card p-4"
+            >
               <div className="mb-2 flex items-center gap-2">
                 <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary">
                   {ticket.creator.name.charAt(0)}
@@ -230,57 +249,78 @@ export default function TicketDetailPage() {
                 </span>
               </div>
               <p className="text-sm leading-relaxed text-foreground/90">{ticket.description}</p>
-            </div>
+            </motion.div>
 
             {/* Messages */}
-            {messages.map((msg) => (
-              <div
-                key={msg.id}
-                className={`rounded-lg border p-4 ${
-                  msg.isInternal
-                    ? "border-dashed border-amber-500/30 bg-amber-500/5"
-                    : "border-border bg-card"
-                }`}
-              >
-                <div className="mb-2 flex items-center gap-2">
-                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary">
-                    {msg.authorName.charAt(0)}
-                  </div>
-                  <span className="text-sm font-medium">{msg.authorName}</span>
-                  {msg.isInternal && (
-                    <span className="inline-flex items-center gap-1 rounded-md bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-medium text-amber-400">
-                      <Lock className="h-2.5 w-2.5" />
-                      Internal
+            <AnimatePresence initial={false}>
+              {messages.map((msg) => (
+                <motion.div
+                  key={msg.id}
+                  initial={{ opacity: 0, y: 16, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.3, ease: "easeOut" }}
+                  className={`rounded-lg border p-4 ${
+                    msg.isInternal
+                      ? "border-dashed border-amber-500/30 bg-amber-500/5"
+                      : "border-border bg-card"
+                  }`}
+                >
+                  <div className="mb-2 flex items-center gap-2">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary">
+                      {msg.authorName.charAt(0)}
+                    </div>
+                    <span className="text-sm font-medium">{msg.authorName}</span>
+                    {msg.isInternal && (
+                      <span className="inline-flex items-center gap-1 rounded-md bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-medium text-amber-400">
+                        <Lock className="h-2.5 w-2.5" />
+                        Internal
+                      </span>
+                    )}
+                    <span className="text-xs text-muted-foreground">
+                      {formatTimeAgo(msg.createdAt)}
                     </span>
-                  )}
-                  <span className="text-xs text-muted-foreground">
-                    {formatTimeAgo(msg.createdAt)}
-                  </span>
-                </div>
-                <p className="text-sm leading-relaxed text-foreground/90">{msg.content}</p>
-              </div>
-            ))}
+                  </div>
+                  <p className="text-sm leading-relaxed text-foreground/90">{msg.content}</p>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+            <div ref={messagesEndRef} />
           </div>
 
           {/* Reply box */}
           <div className="border-t border-border p-4">
-            <div className="mb-2 flex items-center gap-3">
+            <div className="relative mb-2 flex items-center gap-3">
               <button
                 onClick={() => setIsInternal(false)}
-                className={`text-xs font-medium transition-colors ${
+                className={`relative text-xs font-medium transition-colors ${
                   !isInternal ? "text-foreground" : "text-muted-foreground"
                 }`}
               >
                 Reply
+                {!isInternal && (
+                  <motion.div
+                    layoutId="reply-indicator"
+                    className="absolute -bottom-1 left-0 right-0 h-0.5 rounded-full bg-primary"
+                    transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                  />
+                )}
               </button>
               <button
                 onClick={() => setIsInternal(true)}
-                className={`flex items-center gap-1 text-xs font-medium transition-colors ${
+                className={`relative flex items-center gap-1 text-xs font-medium transition-colors ${
                   isInternal ? "text-amber-400" : "text-muted-foreground"
                 }`}
               >
                 <Lock className="h-3 w-3" />
                 Internal Note
+                {isInternal && (
+                  <motion.div
+                    layoutId="reply-indicator"
+                    className="absolute -bottom-1 left-0 right-0 h-0.5 rounded-full bg-amber-400"
+                    transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                  />
+                )}
               </button>
             </div>
             <div className="flex gap-2">
@@ -289,11 +329,45 @@ export default function TicketDetailPage() {
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
                 rows={2}
-                className="min-h-0 resize-none"
+                className="min-h-0 resize-none transition-shadow duration-200 focus-visible:ring-violet-500/40 focus-visible:border-violet-500/60 focus-visible:shadow-[0_0_12px_rgba(139,92,246,0.15)]"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+                    handleSendMessage()
+                  }
+                }}
               />
-              <Button size="icon" className="shrink-0 self-end" disabled={sending || !newMessage.trim()} onClick={handleSendMessage}>
-                {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-              </Button>
+              <motion.div
+                animate={
+                  hasContent && !sending
+                    ? {
+                        scale: [1, 1.05, 1],
+                      }
+                    : { scale: 1 }
+                }
+                transition={
+                  hasContent && !sending
+                    ? {
+                        duration: 1.5,
+                        repeat: Infinity,
+                        ease: "easeInOut",
+                      }
+                    : {}
+                }
+                className="shrink-0 self-end"
+              >
+                <Button
+                  size="icon"
+                  disabled={sending || !hasContent}
+                  onClick={handleSendMessage}
+                  className={hasContent ? "shadow-[0_0_10px_rgba(139,92,246,0.3)]" : ""}
+                >
+                  {sending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Send className="h-4 w-4" />
+                  )}
+                </Button>
+              </motion.div>
             </div>
           </div>
         </div>
@@ -302,30 +376,50 @@ export default function TicketDetailPage() {
         <div className="hidden w-80 space-y-6 overflow-y-auto p-6 lg:block">
           <div>
             <label className="mb-2 block text-xs font-medium text-muted-foreground">Status</label>
-            <select
-              value={status}
-              onChange={(e) => handleStatusChange(e.target.value as TicketStatus)}
-              className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm"
+            <motion.div
+              animate={
+                statusFlash
+                  ? { boxShadow: ["0 0 0px rgba(139,92,246,0)", "0 0 16px rgba(139,92,246,0.4)", "0 0 0px rgba(139,92,246,0)"] }
+                  : {}
+              }
+              transition={{ duration: 0.6 }}
+              className="rounded-md"
             >
-              <option value="open">Open</option>
-              <option value="in_progress">In Progress</option>
-              <option value="resolved">Resolved</option>
-              <option value="closed">Closed</option>
-            </select>
+              <select
+                value={status}
+                onChange={(e) => handleStatusChange(e.target.value as TicketStatus)}
+                className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm outline-none transition-shadow duration-200 focus:ring-2 focus:ring-violet-500/30"
+              >
+                <option value="open">Open</option>
+                <option value="in_progress">In Progress</option>
+                <option value="resolved">Resolved</option>
+                <option value="closed">Closed</option>
+              </select>
+            </motion.div>
           </div>
 
           <div>
             <label className="mb-2 block text-xs font-medium text-muted-foreground">Priority</label>
-            <select
-              value={priority}
-              onChange={(e) => handlePriorityChange(e.target.value as TicketPriority)}
-              className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm"
+            <motion.div
+              animate={
+                priorityFlash
+                  ? { boxShadow: ["0 0 0px rgba(139,92,246,0)", "0 0 16px rgba(139,92,246,0.4)", "0 0 0px rgba(139,92,246,0)"] }
+                  : {}
+              }
+              transition={{ duration: 0.6 }}
+              className="rounded-md"
             >
-              <option value="low">Low</option>
-              <option value="medium">Medium</option>
-              <option value="high">High</option>
-              <option value="urgent">Urgent</option>
-            </select>
+              <select
+                value={priority}
+                onChange={(e) => handlePriorityChange(e.target.value as TicketPriority)}
+                className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm outline-none transition-shadow duration-200 focus:ring-2 focus:ring-violet-500/30"
+              >
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+                <option value="urgent">Urgent</option>
+              </select>
+            </motion.div>
           </div>
 
           <div>
@@ -333,7 +427,7 @@ export default function TicketDetailPage() {
             <select
               value={categoryId}
               onChange={(e) => handleCategoryChange(e.target.value)}
-              className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm"
+              className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm outline-none transition-shadow duration-200 focus:ring-2 focus:ring-violet-500/30"
             >
               <option value="">None</option>
               {categories.map((cat) => (
@@ -347,7 +441,7 @@ export default function TicketDetailPage() {
             <select
               value={assignedTo}
               onChange={(e) => handleAssigneeChange(e.target.value)}
-              className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm"
+              className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm outline-none transition-shadow duration-200 focus:ring-2 focus:ring-violet-500/30"
             >
               <option value="">Unassigned</option>
               {teamMembers.map((member) => (
