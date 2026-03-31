@@ -4,6 +4,7 @@ import { tickets, categories, users, orgTicketCounters } from "@/lib/db/schema"
 import { getSession } from "@/lib/auth"
 import { createTicketSchema } from "@/lib/validators"
 import { eq, and, desc, sql } from "drizzle-orm"
+import { aliasedTable } from "drizzle-orm/alias"
 
 export async function GET(request: Request) {
   const session = await getSession()
@@ -16,6 +17,8 @@ export async function GET(request: Request) {
   const conditions = [eq(tickets.orgId, session.orgId)]
   if (status) conditions.push(eq(tickets.status, status as "open" | "in_progress" | "resolved" | "closed"))
   if (priority) conditions.push(eq(tickets.priority, priority as "low" | "medium" | "high" | "urgent"))
+
+  const creator = aliasedTable(users, "creator")
 
   const results = await db
     .select({
@@ -35,10 +38,12 @@ export async function GET(request: Request) {
       categoryName: categories.name,
       categoryColor: categories.color,
       assigneeName: users.name,
+      creatorName: creator.name,
     })
     .from(tickets)
     .leftJoin(categories, eq(tickets.categoryId, categories.id))
     .leftJoin(users, eq(tickets.assignedTo, users.id))
+    .leftJoin(creator, eq(tickets.createdBy, creator.id))
     .where(and(...conditions))
     .orderBy(desc(tickets.createdAt))
 
