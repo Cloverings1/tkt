@@ -153,7 +153,6 @@ export function CategoryPicker({ categories, value, onChange }: CategoryPickerPr
                       style={
                         isParentOfSelected
                           ? {
-                              ringColor: platform.color,
                               boxShadow: `0 0 0 2px ${platform.color}`,
                               backgroundColor: `${platform.color}10`,
                             }

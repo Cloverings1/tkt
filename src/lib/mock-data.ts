@@ -28,11 +28,11 @@ export const mockUsers: User[] = [
 ]
 
 export const mockCategories: Category[] = [
-  { id: "cat-1", orgId: "org-1", name: "Network", color: "#3b82f6", icon: "wifi", createdAt: daysAgo(85) },
-  { id: "cat-2", orgId: "org-1", name: "Hardware", color: "#f59e0b", icon: "monitor", createdAt: daysAgo(85) },
-  { id: "cat-3", orgId: "org-1", name: "Software", color: "#8b5cf6", icon: "code", createdAt: daysAgo(85) },
-  { id: "cat-4", orgId: "org-1", name: "Security", color: "#ef4444", icon: "shield", createdAt: daysAgo(85) },
-  { id: "cat-5", orgId: "org-1", name: "Account", color: "#10b981", icon: "user", createdAt: daysAgo(80) },
+  { id: "cat-1", orgId: "org-1", name: "Network", color: "#3b82f6", icon: "wifi", parentId: null, createdAt: daysAgo(85) },
+  { id: "cat-2", orgId: "org-1", name: "Hardware", color: "#f59e0b", icon: "monitor", parentId: null, createdAt: daysAgo(85) },
+  { id: "cat-3", orgId: "org-1", name: "Software", color: "#8b5cf6", icon: "code", parentId: null, createdAt: daysAgo(85) },
+  { id: "cat-4", orgId: "org-1", name: "Security", color: "#ef4444", icon: "shield", parentId: null, createdAt: daysAgo(85) },
+  { id: "cat-5", orgId: "org-1", name: "Account", color: "#10b981", icon: "user", parentId: null, createdAt: daysAgo(80) },
 ]
 
 export const mockTickets: TicketWithRelations[] = [
