@@ -22,7 +22,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Plus, Loader2 } from "lucide-react"
+import { Plus, Loader2, Shield, Headset, User } from "lucide-react"
+import { motion } from "motion/react"
+import type { LucideIcon } from "lucide-react"
 import type { OrgRole } from "@/lib/types"
 
 interface TeamMember {
@@ -34,10 +36,30 @@ interface TeamMember {
   joinedAt: string
 }
 
-const roleColors: Record<OrgRole, string> = {
-  admin: "bg-violet-500/10 text-violet-400",
-  agent: "bg-blue-500/10 text-blue-400",
-  customer: "bg-zinc-500/10 text-zinc-400",
+const roleConfig: Record<OrgRole, {
+  badge: string
+  avatar: string
+  icon: LucideIcon
+  label: string
+}> = {
+  admin: {
+    badge: "bg-violet-500/15 text-violet-400 border border-violet-500/20",
+    avatar: "bg-violet-500/20 text-violet-400 ring-violet-500/30",
+    icon: Shield,
+    label: "Admin",
+  },
+  agent: {
+    badge: "bg-blue-500/15 text-blue-400 border border-blue-500/20",
+    avatar: "bg-blue-500/20 text-blue-400 ring-blue-500/30",
+    icon: Headset,
+    label: "Agent",
+  },
+  customer: {
+    badge: "bg-zinc-500/15 text-zinc-400 border border-zinc-500/20",
+    avatar: "bg-zinc-500/20 text-zinc-400 ring-zinc-500/30",
+    icon: User,
+    label: "Customer",
+  },
 }
 
 export default function TeamPage() {
@@ -180,43 +202,55 @@ export default function TeamPage() {
           <p className="text-sm">No team members yet.</p>
         </div>
       ) : (
-        <div className="mt-8 rounded-xl border border-border">
+        <div className="mt-8 rounded-xl border border-border overflow-hidden">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-border text-left text-xs font-medium text-muted-foreground">
-                <th className="px-4 py-3">Member</th>
-                <th className="px-4 py-3">Email</th>
-                <th className="px-4 py-3">Role</th>
-                <th className="px-4 py-3">Joined</th>
+              <tr className="border-b border-border bg-zinc-900/50 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                <th className="px-5 py-3.5">Member</th>
+                <th className="px-5 py-3.5">Email</th>
+                <th className="px-5 py-3.5">Role</th>
+                <th className="px-5 py-3.5">Joined</th>
               </tr>
             </thead>
             <tbody>
-              {members.map((member) => (
-                <tr
-                  key={member.id}
-                  className="border-b border-border/50 last:border-0"
-                >
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary">
-                        {member.name.charAt(0).toUpperCase()}
+              {members.map((member, index) => {
+                const config = roleConfig[member.role]
+                const RoleIcon = config.icon
+                return (
+                  <motion.tr
+                    key={member.id}
+                    initial={{ opacity: 0, x: -8 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.25, delay: index * 0.05 }}
+                    className="border-b border-border/50 last:border-0 transition-colors duration-150 hover:bg-zinc-900/40"
+                  >
+                    <td className="px-5 py-4">
+                      <div className="flex items-center gap-3.5">
+                        <div className={`flex h-10 w-10 items-center justify-center rounded-full text-sm font-semibold ring-2 ${config.avatar}`}>
+                          {member.name.charAt(0).toUpperCase()}
+                        </div>
+                        <span className="text-sm font-medium text-foreground">{member.name}</span>
                       </div>
-                      <span className="text-sm font-medium">{member.name}</span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-sm text-muted-foreground">
-                    {member.email}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className={`inline-flex rounded-md px-2 py-0.5 text-xs font-medium capitalize ${roleColors[member.role]}`}>
-                      {member.role}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground">
-                    {new Date(member.joinedAt).toLocaleDateString()}
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                    <td className="px-5 py-4 text-sm text-muted-foreground font-mono">
+                      {member.email}
+                    </td>
+                    <td className="px-5 py-4">
+                      <span className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-semibold ${config.badge}`}>
+                        <RoleIcon className="h-3 w-3" />
+                        {config.label}
+                      </span>
+                    </td>
+                    <td className="px-5 py-4 text-xs text-muted-foreground font-mono">
+                      {new Date(member.joinedAt).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                      })}
+                    </td>
+                  </motion.tr>
+                )
+              })}
             </tbody>
           </table>
         </div>
