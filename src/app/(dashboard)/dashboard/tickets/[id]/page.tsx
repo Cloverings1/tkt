@@ -113,6 +113,30 @@ export default function TicketDetailPage() {
     fetchData()
   }, [ticketId])
 
+  async function handleSendMessage() {
+    if (!newMessage.trim() || sending) return
+    setSending(true)
+    try {
+      const res = await fetch(`/api/tickets/${ticketId}/messages`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: newMessage.trim(), isInternal }),
+      })
+      if (!res.ok) {
+        const err = await res.json()
+        console.error("Failed to send message:", err.error)
+        return
+      }
+      const msg: TicketMessage = await res.json()
+      setMessages((prev) => [...prev, msg])
+      setNewMessage("")
+    } catch {
+      console.error("Failed to send message")
+    } finally {
+      setSending(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex h-full items-center justify-center">
@@ -231,7 +255,7 @@ export default function TicketDetailPage() {
                 rows={2}
                 className="min-h-0 resize-none"
               />
-              <Button size="icon" className="shrink-0 self-end" disabled={sending || !newMessage.trim()}>
+              <Button size="icon" className="shrink-0 self-end" disabled={sending || !newMessage.trim()} onClick={handleSendMessage}>
                 {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
               </Button>
             </div>
