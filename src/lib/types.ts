@@ -32,6 +32,7 @@ export interface Category {
   name: string
   color: string
   icon: string | null
+  parentId: string | null
   createdAt: Date
 }
 
