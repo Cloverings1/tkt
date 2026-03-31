@@ -1,3 +1,4 @@
+import { AnimatedLayout } from "@/components/ui/animated-layout"
 import { PageHeader } from "@/components/ui/page-header"
 import { Button } from "@/components/ui/button"
 import { mockUsers } from "@/lib/mock-data"
@@ -19,6 +20,7 @@ const roleColors = {
 
 export default function TeamPage() {
   return (
+    <AnimatedLayout>
     <div className="p-8">
       <PageHeader title="Team" description="Manage team members and roles">
         <Button>
@@ -68,5 +70,6 @@ export default function TeamPage() {
         </table>
       </div>
     </div>
+    </AnimatedLayout>
   )
 }
