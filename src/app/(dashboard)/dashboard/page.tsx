@@ -1,12 +1,55 @@
+import { redirect } from "next/navigation"
+import Link from "next/link"
 import { PageHeader } from "@/components/ui/page-header"
 import { StatCard } from "@/components/ui/stat-card"
 import { StatusBadge } from "@/components/ui/status-badge"
 import { PriorityBadge } from "@/components/ui/priority-badge"
-import { mockTickets, mockStats } from "@/lib/mock-data"
-import Link from "next/link"
+import { getSession } from "@/lib/auth"
+import { db } from "@/lib/db"
+import { tickets, categories, users } from "@/lib/db/schema"
+import { eq, and, count, desc } from "drizzle-orm"
 
-export default function DashboardPage() {
-  const recentTickets = mockTickets.slice(0, 5)
+export default async function DashboardPage() {
+  const session = await getSession()
+  if (!session) redirect("/login")
+
+  // Query ticket stats by status
+  const statsRows = await db
+    .select({
+      status: tickets.status,
+      count: count(),
+    })
+    .from(tickets)
+    .where(eq(tickets.orgId, session.orgId))
+    .groupBy(tickets.status)
+
+  const stats = { total: 0, open: 0, inProgress: 0, resolved: 0 }
+  for (const row of statsRows) {
+    stats.total += row.count
+    if (row.status === "open") stats.open = row.count
+    else if (row.status === "in_progress") stats.inProgress = row.count
+    else if (row.status === "resolved") stats.resolved = row.count
+  }
+
+  // Query recent 5 tickets with category + assignee joins
+  const recentTickets = await db
+    .select({
+      id: tickets.id,
+      ticketNumber: tickets.ticketNumber,
+      title: tickets.title,
+      status: tickets.status,
+      priority: tickets.priority,
+      createdAt: tickets.createdAt,
+      categoryName: categories.name,
+      categoryColor: categories.color,
+      assigneeName: users.name,
+    })
+    .from(tickets)
+    .leftJoin(categories, eq(tickets.categoryId, categories.id))
+    .leftJoin(users, eq(tickets.assignedTo, users.id))
+    .where(eq(tickets.orgId, session.orgId))
+    .orderBy(desc(tickets.createdAt))
+    .limit(5)
 
   return (
     <div className="p-8">
@@ -17,10 +60,10 @@ export default function DashboardPage() {
 
       {/* Stats */}
       <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Total Tickets" value={mockStats.total} />
-        <StatCard label="Open" value={mockStats.open} className="text-blue-400" />
-        <StatCard label="In Progress" value={mockStats.inProgress} className="text-amber-400" />
-        <StatCard label="Resolved (this week)" value={mockStats.resolved} className="text-emerald-400" />
+        <StatCard label="Total Tickets" value={stats.total} />
+        <StatCard label="Open" value={stats.open} className="text-blue-400" />
+        <StatCard label="In Progress" value={stats.inProgress} className="text-amber-400" />
+        <StatCard label="Resolved (this week)" value={stats.resolved} className="text-emerald-400" />
       </div>
 
       {/* Recent tickets */}
@@ -53,6 +96,11 @@ export default function DashboardPage() {
               </span>
             </Link>
           ))}
+          {recentTickets.length === 0 && (
+            <p className="py-8 text-center text-sm text-muted-foreground">
+              No tickets yet. Create your first ticket to get started.
+            </p>
+          )}
         </div>
       </div>
     </div>
