@@ -49,6 +49,17 @@ interface CategoryOption {
   color: string
 }
 
+interface CategoryWithChildren {
+  id: string
+  name: string
+  color: string
+  icon: string | null
+  parentId: string | null
+  orgId: string
+  createdAt: string
+  children: CategoryWithChildren[]
+}
+
 interface TeamMember {
   id: string
   name: string
@@ -63,7 +74,7 @@ export default function TicketDetailPage() {
 
   const [ticket, setTicket] = useState<TicketDetail | null>(null)
   const [messages, setMessages] = useState<TicketMessage[]>([])
-  const [categories, setCategories] = useState<CategoryOption[]>([])
+  const [categories, setCategories] = useState<CategoryWithChildren[]>([])
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -430,8 +441,16 @@ export default function TicketDetailPage() {
               className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm outline-none transition-shadow duration-200 focus:ring-2 focus:ring-violet-500/30"
             >
               <option value="">None</option>
-              {categories.map((cat) => (
-                <option key={cat.id} value={cat.id}>{cat.name}</option>
+              {categories.map((platform) => (
+                platform.children.length > 0 ? (
+                  <optgroup key={platform.id} label={platform.name}>
+                    {platform.children.map((child) => (
+                      <option key={child.id} value={child.id}>{child.name}</option>
+                    ))}
+                  </optgroup>
+                ) : (
+                  <option key={platform.id} value={platform.id}>{platform.name}</option>
+                )
               ))}
             </select>
           </div>
