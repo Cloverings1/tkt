@@ -113,6 +113,41 @@ export default function TicketDetailPage() {
     fetchData()
   }, [ticketId])
 
+  async function handlePatch(field: string, value: string) {
+    try {
+      const res = await fetch(`/api/tickets/${ticketId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ [field]: value || null }),
+      })
+      if (!res.ok) {
+        console.error("Failed to update ticket:", (await res.json()).error)
+      }
+    } catch {
+      console.error("Failed to update ticket")
+    }
+  }
+
+  function handleStatusChange(val: TicketStatus) {
+    setStatus(val)
+    handlePatch("status", val)
+  }
+
+  function handlePriorityChange(val: TicketPriority) {
+    setPriority(val)
+    handlePatch("priority", val)
+  }
+
+  function handleCategoryChange(val: string) {
+    setCategoryId(val)
+    handlePatch("categoryId", val)
+  }
+
+  function handleAssigneeChange(val: string) {
+    setAssignedTo(val)
+    handlePatch("assignedTo", val)
+  }
+
   async function handleSendMessage() {
     if (!newMessage.trim() || sending) return
     setSending(true)
@@ -268,7 +303,7 @@ export default function TicketDetailPage() {
             <label className="mb-2 block text-xs font-medium text-muted-foreground">Status</label>
             <select
               value={status}
-              onChange={(e) => setStatus(e.target.value as TicketStatus)}
+              onChange={(e) => handleStatusChange(e.target.value as TicketStatus)}
               className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm"
             >
               <option value="open">Open</option>
@@ -282,7 +317,7 @@ export default function TicketDetailPage() {
             <label className="mb-2 block text-xs font-medium text-muted-foreground">Priority</label>
             <select
               value={priority}
-              onChange={(e) => setPriority(e.target.value as TicketPriority)}
+              onChange={(e) => handlePriorityChange(e.target.value as TicketPriority)}
               className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm"
             >
               <option value="low">Low</option>
@@ -296,7 +331,7 @@ export default function TicketDetailPage() {
             <label className="mb-2 block text-xs font-medium text-muted-foreground">Category</label>
             <select
               value={categoryId}
-              onChange={(e) => setCategoryId(e.target.value)}
+              onChange={(e) => handleCategoryChange(e.target.value)}
               className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm"
             >
               <option value="">None</option>
@@ -310,7 +345,7 @@ export default function TicketDetailPage() {
             <label className="mb-2 block text-xs font-medium text-muted-foreground">Assignee</label>
             <select
               value={assignedTo}
-              onChange={(e) => setAssignedTo(e.target.value)}
+              onChange={(e) => handleAssigneeChange(e.target.value)}
               className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm"
             >
               <option value="">Unassigned</option>
