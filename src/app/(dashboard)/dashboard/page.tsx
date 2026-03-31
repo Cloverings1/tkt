@@ -10,6 +10,7 @@ import { db } from "@/lib/db"
 import { tickets, categories, users } from "@/lib/db/schema"
 import { eq, and, count, desc } from "drizzle-orm"
 import { Inbox } from "lucide-react"
+import { WelcomeBanner } from "@/components/dashboard/welcome-banner"
 
 export default async function DashboardPage() {
   const session = await getSession()
@@ -60,6 +61,12 @@ export default async function DashboardPage() {
           title="Dashboard"
           description="Overview of your support operations"
         />
+
+        {stats.total === 0 && (
+          <div className="mt-8">
+            <WelcomeBanner />
+          </div>
+        )}
 
         {/* Stats */}
         <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
