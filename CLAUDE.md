@@ -1,5 +1,25 @@
 @AGENTS.md
 
+# *** DO NOT SKIP THIS — READ FIRST ***
+
+## **Git Commit & PR Message Style — MANDATORY**
+
+**All commit messages, PR titles, and PR descriptions MUST be written in junior-dev-friendly language.**
+
+- Write like a friendly junior developer explaining what they did
+- Keep it simple, clear, and human — no corporate jargon
+- Use plain English anyone on the team could understand
+- Examples:
+  - `add the pricing card section to the landing page`
+  - `fix the login button not working on mobile`
+  - `update the footer with a nicer gradient line`
+  - `hook up the signup form to the database`
+  - `make the navbar sticky and add a glow to the logo`
+- **Commit often** — every small change gets its own commit
+- This applies to ALL git operations: commits, PRs, branch names, everything
+
+---
+
 # TKT — Technical Support Ticketing Platform
 
 ## Project Overview
