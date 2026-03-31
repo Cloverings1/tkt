@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { PageHeader } from "@/components/ui/page-header"
+import { SuccessFlash } from "@/components/ui/success-flash"
 import {
   Loader2,
   CircleMinus,
@@ -74,12 +75,56 @@ const PRIORITY_CARDS: {
   },
 ]
 
+const COLOR_DOT_MAP: Record<string, string> = {
+  red: "bg-red-400",
+  blue: "bg-blue-400",
+  green: "bg-emerald-400",
+  yellow: "bg-yellow-400",
+  orange: "bg-orange-400",
+  purple: "bg-purple-400",
+  pink: "bg-pink-400",
+  indigo: "bg-indigo-400",
+  teal: "bg-teal-400",
+  cyan: "bg-cyan-400",
+  amber: "bg-amber-400",
+  emerald: "bg-emerald-400",
+  violet: "bg-violet-400",
+  rose: "bg-rose-400",
+  lime: "bg-lime-400",
+  zinc: "bg-zinc-400",
+  slate: "bg-slate-400",
+}
+
+function getCategoryDotColor(color: string): string {
+  const lower = color.toLowerCase()
+  for (const [key, cls] of Object.entries(COLOR_DOT_MAP)) {
+    if (lower.includes(key)) return cls
+  }
+  return "bg-violet-400"
+}
+
+const staggerContainer = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.08,
+    },
+  },
+}
+
+const staggerItem = {
+  hidden: { opacity: 0, y: 12 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.35, ease: "easeOut" } },
+}
+
 export default function NewTicketPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [categories, setCategories] = useState<CategoryOption[]>([])
   const [priority, setPriority] = useState<TicketPriority>("medium")
+  const [showSuccess, setShowSuccess] = useState(false)
 
   useEffect(() => {
     async function fetchCategories() {
@@ -124,7 +169,7 @@ export default function NewTicketPage() {
         return
       }
 
-      router.push("/dashboard/tickets")
+      setShowSuccess(true)
     } catch {
       setError("Failed to create ticket. Please try again.")
       setLoading(false)
@@ -133,27 +178,43 @@ export default function NewTicketPage() {
 
   return (
     <AnimatedLayout>
-    <div className="p-8">
+    <div className="relative p-8">
+      <SuccessFlash
+        show={showSuccess}
+        onComplete={() => router.push("/dashboard/tickets")}
+      />
+
       <PageHeader title="New Ticket" description="Create a new support ticket" />
 
-      <form onSubmit={handleSubmit} className="mt-8 max-w-2xl space-y-6">
+      <motion.form
+        onSubmit={handleSubmit}
+        className="mt-8 max-w-2xl space-y-6"
+        variants={staggerContainer}
+        initial="hidden"
+        animate="show"
+      >
         {error && (
-          <div className="rounded-md border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+          <motion.div
+            initial={{ opacity: 0, x: -8 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="rounded-md border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400"
+          >
             {error}
-          </div>
+          </motion.div>
         )}
 
-        <div className="space-y-2">
+        <motion.div className="space-y-2" variants={staggerItem}>
           <Label htmlFor="title">Title</Label>
           <Input
             id="title"
             name="title"
             placeholder="Brief summary of the issue"
             required
+            className="transition-shadow duration-200 focus-visible:ring-violet-500/40 focus-visible:border-violet-500/60 focus-visible:shadow-[0_0_12px_rgba(139,92,246,0.15)]"
           />
-        </div>
+        </motion.div>
 
-        <div className="space-y-2">
+        <motion.div className="space-y-2" variants={staggerItem}>
           <Label htmlFor="description">Description</Label>
           <Textarea
             id="description"
@@ -161,10 +222,11 @@ export default function NewTicketPage() {
             placeholder="Describe the issue in detail..."
             rows={6}
             required
+            className="transition-shadow duration-200 focus-visible:ring-violet-500/40 focus-visible:border-violet-500/60 focus-visible:shadow-[0_0_12px_rgba(139,92,246,0.15)]"
           />
-        </div>
+        </motion.div>
 
-        <div className="space-y-3">
+        <motion.div className="space-y-3" variants={staggerItem}>
           <Label>Priority</Label>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             {PRIORITY_CARDS.map((p) => {
@@ -210,27 +272,49 @@ export default function NewTicketPage() {
               )
             })}
           </div>
-        </div>
+        </motion.div>
 
-        <div className="space-y-2">
+        <motion.div className="space-y-2" variants={staggerItem}>
           <Label htmlFor="category">Category</Label>
-          <select
-            id="category"
-            name="category"
-            className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm"
-          >
-            <option value="">Select a category</option>
-            {categories.map((cat) => (
-              <option key={cat.id} value={cat.id}>{cat.name}</option>
-            ))}
-          </select>
-        </div>
+          <div className="relative">
+            <select
+              id="category"
+              name="category"
+              className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm transition-shadow duration-200 focus-visible:ring-3 focus-visible:ring-violet-500/40 focus-visible:border-violet-500/60 focus-visible:shadow-[0_0_12px_rgba(139,92,246,0.15)] outline-none"
+            >
+              <option value="">Select a category</option>
+              {categories.map((cat) => (
+                <option key={cat.id} value={cat.id}>{cat.name}</option>
+              ))}
+            </select>
+          </div>
+          {categories.length > 0 && (
+            <div className="flex flex-wrap gap-2 pt-1">
+              {categories.map((cat) => (
+                <span
+                  key={cat.id}
+                  className="inline-flex items-center gap-1.5 text-xs text-muted-foreground"
+                >
+                  <span
+                    className={`inline-block h-2 w-2 rounded-full ${getCategoryDotColor(cat.color)}`}
+                  />
+                  {cat.name}
+                </span>
+              ))}
+            </div>
+          )}
+        </motion.div>
 
-        <div className="flex gap-3">
-          <Button type="submit" disabled={loading}>
-            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+        <motion.div className="flex gap-3" variants={staggerItem}>
+          <button
+            type="submit"
+            disabled={loading}
+            className="group relative inline-flex h-8 items-center justify-center gap-1.5 overflow-hidden rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition-all hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50"
+          >
+            <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
+            {loading && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
             Create Ticket
-          </Button>
+          </button>
           <Button
             type="button"
             variant="outline"
@@ -238,8 +322,8 @@ export default function NewTicketPage() {
           >
             Cancel
           </Button>
-        </div>
-      </form>
+        </motion.div>
+      </motion.form>
     </div>
     </AnimatedLayout>
   )
