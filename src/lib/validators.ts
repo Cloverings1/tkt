@@ -37,6 +37,7 @@ export const createCategorySchema = z.object({
   name: z.string().min(1, "Name is required").max(50, "Name too long"),
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/, "Invalid hex color"),
   icon: z.string().optional(),
+  parentId: z.string().uuid().optional(),
 })
 
 export const inviteTeamMemberSchema = z.object({

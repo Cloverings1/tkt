@@ -3,19 +3,29 @@ import { db } from "@/lib/db"
 import { categories } from "@/lib/db/schema"
 import { getSession } from "@/lib/auth"
 import { createCategorySchema } from "@/lib/validators"
-import { eq, desc } from "drizzle-orm"
+import { eq, asc } from "drizzle-orm"
 
 export async function GET() {
   const session = await getSession()
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
-  const results = await db
+  const allCategories = await db
     .select()
     .from(categories)
     .where(eq(categories.orgId, session.orgId))
-    .orderBy(desc(categories.createdAt))
+    .orderBy(asc(categories.name))
 
-  return NextResponse.json(results)
+  // Separate parents and children
+  const parents = allCategories.filter((c) => c.parentId === null)
+  const children = allCategories.filter((c) => c.parentId !== null)
+
+  // Group children under their parents
+  const nested = parents.map((parent) => ({
+    ...parent,
+    children: children.filter((c) => c.parentId === parent.id),
+  }))
+
+  return NextResponse.json(nested)
 }
 
 export async function POST(request: Request) {
@@ -34,6 +44,7 @@ export async function POST(request: Request) {
     name: input.name,
     color: input.color,
     icon: input.icon ?? null,
+    parentId: input.parentId ?? null,
   }).returning()
 
   return NextResponse.json(category, { status: 201 })
